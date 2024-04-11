@@ -1,0 +1,51 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "./__generated__"
+  binaryTargets   = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
+  previewFeatures = ["interactiveTransactions"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String         @id @default(cuid())
+  lineUid              String         @unique
+  ableToReceiveMessage Boolean
+  payerHistories       History[]      @relation("PayerHistory")
+  payeeHistories       PayeeHistory[]
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  approveUpdateTermsAt DateTime?
+
+  @@map("users")
+}
+
+model History {
+  id             String         @id @default(cuid())
+  lineGroupId    String
+  name           String
+  summary        String
+  amount         Int
+  payer          User           @relation("PayerHistory", fields: [payerId], references: [id])
+  payerId        String
+  payeeHistories PayeeHistory[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index(lineGroupId)
+  @@map("histories")
+}
+
+model PayeeHistory {
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  history   History  @relation(fields: [historyId], references: [id])
+  historyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([userId, historyId])
+}
